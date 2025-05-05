@@ -8,7 +8,7 @@ import {
   faCheckCircle,
   faSyncAlt,
   faUserCheck,
-  faDollarSign,
+ 
   faSearch,
   faBookOpen,
   faBook,
@@ -40,7 +40,7 @@ export default function App() {
         style={{
           animation: "moveBg 20s ease-in-out infinite alternate",
           background:
-            "radial-gradient(circle at 10% 40%, rgba(255, 124, 209, 0.8), rgba(99, 194, 248, 0.47), transparent 50%), radial-gradient(circle at 70% 60%, rgba(142, 119, 255, 0.75), transparent 100%)",
+            "radial-gradient(circle at 50% 40%, rgba(255, 124, 209, 0.8), rgba(99, 194, 248, 0.47), transparent 50%), radial-gradient(circle at 70% 60%, rgba(142, 119, 255, 0.75), transparent 100%)",
           filter: "blur(150px)",
           backgroundSize: "200% 200%",
         }}
@@ -97,8 +97,8 @@ export default function App() {
           </div>
           <div>
             <h3 className="text-3xl font-semibold flex justify-center items-center text-black">
-              <FontAwesomeIcon icon={faDollarSign} className="mr-2" />
-              Instant
+              <FontAwesomeIcon className="mr-2" />
+              ₹ Instant
             </h3>
             <p className="text-gray-600">Payments</p>
           </div>
@@ -126,41 +126,51 @@ export default function App() {
         </section>
 
         {/* Student Task Cards */}
-        <section className="mt-16 max-w-6xl w-full px-4 mx-auto">
-          <h2 className="text-3xl font-bold text-center text-black mb-6">
-            Common Student Tasks
-          </h2>
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-slide-in">
-            {[
-              { icon: faBookOpen, title: "Assignment Writing", location: "Hostel 5, DU Campus", price: "₹300" },
-              { icon: faBook, title: "Deliver Book to Friend", location: "Library → Hostel 3", price: "₹50" },
-              { icon: faPenNib, title: "Notes Digitization", location: "PG Block, Mumbai Univ.", price: "₹150" },
-              { icon: faLaptop, title: "Online Research Help", location: "Online", price: "₹200" },
-              { icon: faUtensils, title: "Food Pickup from Mess", location: "Gate 2, College Mess", price: "₹30" },
-              { icon: faBroom, title: "Room Cleanup Help", location: "Flat 12A, Student Housing", price: "₹100" },
-              { icon: faPrint, title: "Print and Submit Docs", location: "Print Shop to Office", price: "₹80" },
-              { icon: faMobileAlt, title: "Phone Recharge Help", location: "Online", price: "₹20" },
-            ].map((task, idx) => (
-              <div
-                key={idx}
-                className={`bg-gradient-to-br ${cardGradients[idx % cardGradients.length]} text-white rounded-2xl p-5 shadow-md hover:shadow-xl transition duration-300 transform hover:scale-105`}
-              >
-                <div className="text-4xl mb-3">
-                  <FontAwesomeIcon icon={task.icon} />
-                </div>
-                <h3 className="text-xl font-semibold mb-1">{task.title}</h3>
-                <p className="text-sm">
-                  <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-1" />
-                  {task.location}
-                </p>
-                <p className="font-bold mt-2">
-                  <FontAwesomeIcon  className="mr-1" />
-                  {task.price}
-                </p>
-              </div>
-            ))}
+        {/* Nearby Tasks Section */}
+<section className="mt-16 max-w-6xl w-full px-4 mx-auto">
+  <h2 className="text-3xl font-bold text-center text-black mb-6">
+    Nearby Tasks
+  </h2>
+  <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-slide-in mb-10">
+    {[
+      { icon: faBookOpen, title: "Assignment Writing", location: "Hostel 5, DU Campus", price: "₹300" },
+      { icon: faBook, title: "Deliver Book to Friend", location: "Library → Hostel 3", price: "₹50" },
+      { icon: faPenNib, title: "Notes Digitization", location: "PG Block, Mumbai Univ.", price: "₹150" },
+      { icon: faLaptop, title: "Online Research Help", location: "Online", price: "₹200" },
+      { icon: faUtensils, title: "Food Pickup from Mess", location: "Gate 2, College Mess", price: "₹30" },
+      { icon: faBroom, title: "Room Cleanup Help", location: "Flat 12A, Student Housing", price: "₹100" },
+      { icon: faPrint, title: "Print and Submit Docs", location: "Print Shop to Office", price: "₹80" },
+      { icon: faMobileAlt, title: "Phone Recharge Help", location: "Online", price: "₹20" },
+    ].map((task, idx) => (
+      <div
+        key={idx}
+        className={`bg-gradient-to-br ${cardGradients[idx % cardGradients.length]} text-black rounded-2xl p-5 shadow-md hover:shadow-xl transition duration-300 transform hover:scale-105 flex flex-col justify-between`}
+      >
+        <div>
+          <div className="text-4xl mb-3">
+            <FontAwesomeIcon icon={task.icon} />
           </div>
-        </section>
+          <h3 className="text-xl font-semibold mb-1">{task.title}</h3>
+          <p className="text-sm">
+            <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-1" />
+            {task.location}
+          </p>
+          <p className="font-bold mt-2">{task.price}</p>
+        </div>
+        <button className="mt-4 bg-black text-white py-2 px-4 rounded-xl hover:bg-purple-800 transition">
+          Accept Task
+        </button>
+      </div>
+    ))}
+  </div>
+</section>
+{/* Footer */}
+<footer className="w-full text-center py-6 bg-gradient-to-r from-purple-600 to-pink-500 text-white mt-auto"  >
+ <div className="hello"><p className="text-sm">&copy; {new Date().getFullYear()} ZipTask. All rights reserved.</p>
+ <p className="text-xs mt-1">Built for local communities and student networks</p></div>
+</footer>
+
+
       </div>
 
       {/* Animation Keyframes */}

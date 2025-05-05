@@ -50,3 +50,18 @@ body{
 .card{
   background-color: rgba(49, 48, 48, 0.384);
 }
+
+.hello{
+  width: 100%;
+  z-index: 10;
+display: flex;
+justify-content: center;
+align-items: center;
+flex-direction: column;
+
+
+  
+
+  
+
+}
