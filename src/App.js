@@ -37,6 +37,7 @@ function App() {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
+    phone: '',
     location: '',
     password: '',
   });
@@ -122,13 +123,7 @@ function App() {
         .eq('id', userId)
         .single();
 
-      if (error) {
-        if (error.code === '401') {
-          console.warn('Unauthorized access to profiles table. Check RLS policies and anon key permissions.');
-          return;
-        }
-        throw error;
-      }
+      if (error) throw error;
 
       setUser(prev => ({
         ...prev,
@@ -188,6 +183,12 @@ function App() {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
         throw new Error('Please enter a valid email address.');
       }
+      if (!formData.phone) {
+        throw new Error('Please enter a phone number.');
+      }
+      if (!/^\+?[1-9]\d{1,14}$/.test(formData.phone.replace(/[-()\s]/g, ''))) {
+        throw new Error('Please enter a valid phone number (e.g., +1234567890 or 123-456-7890).');
+      }
       if (!formData.location) {
         throw new Error('Location is required.');
       }
@@ -202,7 +203,7 @@ function App() {
         .single();
 
       if (checkError && checkError.code !== 'PGRST116') {
-        console.error('Error checking email availability:', checkError);
+        console.error('Check email error:', checkError);
         throw new Error('Error checking email availability: ' + checkError.message);
       }
       if (existingUser) {
@@ -216,61 +217,88 @@ function App() {
         .single();
 
       if (usernameCheckError && usernameCheckError.code !== 'PGRST116') {
-        console.error('Error checking username availability:', usernameCheckError);
+        console.error('Check username error:', usernameCheckError);
         throw new Error('Error checking username availability: ' + usernameCheckError.message);
       }
       if (existingUsername) {
         throw new Error('Username already taken. Please choose a different username.');
       }
 
+      const { data: existingPhone, error: phoneCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('phone', formData.phone)
+        .single();
+
+      if (phoneCheckError && phoneCheckError.code !== 'PGRST116') {
+        console.error('Check phone error:', phoneCheckError);
+        throw new Error('Error checking phone availability: ' + phoneCheckError.message);
+      }
+      if (existingPhone) {
+        throw new Error('Phone number already in use. Please use a different phone number.');
+      }
+
+      console.log('Attempting to sign up with Supabase Auth...');
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-          data: { username: formData.username }
+          data: { username: formData.username },
+          emailRedirectTo: 'https://ziptasa.netlify.app/'
         }
       });
 
       if (authError) {
-        console.error('Signup auth error:', authError);
+        console.error('Auth error:', authError);
         if (authError.message.includes('already registered')) {
           throw new Error('Email already in use. Please use a different email or log in.');
         }
         throw new Error('Signup failed: ' + authError.message);
       }
 
-      console.log('User signed up successfully, user ID:', authData.user.id);
+      console.log('Auth data:', authData);
 
-      // Immediately sign the user in to ensure auth.uid() is available for RLS
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (signInError) {
-        console.error('Sign-in after signup failed:', signInError);
-        throw new Error('Failed to sign in after signup: ' + signInError.message);
+      const userId = authData.user?.id;
+      if (!userId) {
+        throw new Error('User ID not returned after signup. Please try again.');
       }
 
-      console.log('User signed in successfully after signup');
+      // Verify the user session after signup
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('Session error after signup:', sessionError);
+        throw new Error('Failed to retrieve session after signup: ' + sessionError.message);
+      }
+      console.log('Session data after signup:', sessionData);
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          username: formData.username,
-          location: formData.location,
-          email: formData.email
+      console.log('Calling create_user_profile with:', {
+        p_id: userId,
+        p_username: formData.username,
+        p_location: formData.location,
+        p_email: formData.email,
+        p_phone: formData.phone
+      });
+
+      // Call the database function to create the profile
+      const { data: profileData, error: profileError } = await supabase
+        .rpc('create_user_profile', {
+          p_id: userId,
+          p_username: formData.username,
+          p_location: formData.location,
+          p_email: formData.email,
+          p_phone: formData.phone
         });
 
       if (profileError) {
-        console.error('Profile insertion error:', profileError);
-        throw new Error('Failed to create profile: ' + profileError.message);
+        console.error('Profile creation error:', profileError);
+        throw new Error('Failed to create profile: ' + profileError.message + '. Check Supabase logs for more details.');
       }
 
-      setSuccess('Account created successfully! You are now logged in.');
-      setFormData({ username: '', email: '', location: '', password: '' });
-      setShowModal(false);
+      console.log('Profile creation response:', profileData);
+
+      setSuccess('Account created successfully! Please check your email (including spam/junk folder) to verify your account.');
+      setFormData({ username: '', email: '', phone: '', location: '', password: '' });
+      setFormType(null);
     } catch (err) {
       console.error('Signup error:', err.message);
       setError(err.message || 'Sign-up failed. Please try again.');
@@ -308,11 +336,14 @@ function App() {
         if (error.message.includes('Invalid login credentials')) {
           throw new Error('Invalid username or password.');
         }
+        if (error.message.includes('Email not confirmed')) {
+          throw new Error('Please verify your email before logging in. Check your inbox (and spam/junk folder) for the verification email.');
+        }
         throw new Error('Login failed: ' + error.message);
       }
 
       setShowModal(false);
-      setFormData({ username: '', email: '', location: '', password: '' });
+      setFormData({ username: '', email: '', phone: '', location: '', password: '' });
     } catch (err) {
       console.error('Login error:', err.message);
       setError(err.message || 'Login failed. Please try again.');
@@ -405,7 +436,7 @@ function App() {
     setFormType(null);
     setError(null);
     setSuccess(null);
-    setFormData({ username: '', email: '', location: '', password: '' });
+    setFormData({ username: '', email: '', phone: '', location: '', password: '' });
   }, []);
 
   const renderForm = () => {
@@ -442,6 +473,15 @@ function App() {
         placeholder: 'Email',
         className: 'border border-gray-300 rounded-md px-3 py-2 w-full',
         value: formData.email,
+        onChange: handleInputChange,
+        required: true
+      }),
+      formType === 'signup' && React.createElement('input', {
+        type: 'tel',
+        name: 'phone',
+        placeholder: 'Phone Number (e.g., +1234567890)',
+        className: 'border border-gray-300 rounded-md px-3 py-2 w-full',
+        value: formData.phone,
         onChange: handleInputChange,
         required: true
       }),
@@ -623,6 +663,7 @@ function App() {
             ),
             React.createElement('h2', { className: 'text-3xl font-bold mb-2' }, `Welcome, ${user.user_metadata?.username || 'User'}!`),
             React.createElement('p', { className: 'text-gray-700 mb-2' }, `Email: ${user.user_metadata?.email || 'Not available'}`),
+            React.createElement('p', { className: 'text-gray-700 mb-2' }, `Phone: ${user.user_metadata?.phone || 'Not available'}`),
             React.createElement('p', { className: 'text-gray-700' }, `Location: ${user.user_metadata?.location || 'Not specified'}`)
           )
         ] : [
