@@ -17,7 +17,8 @@
   }
 }
 body{
-  background-color: rgba(181, 255, 124, 0.377);
+  background-color: rgba(0, 0, 0, 0.935);
+  
   margin: 0;
   padding: 0;
 }
@@ -48,7 +49,7 @@ body{
 }
 
 .card{
-  background-color: rgba(49, 48, 48, 0.384);
+  background-color: rgba(0, 0, 0, 0.384);
 }
 
 .hello{
@@ -65,3 +66,4 @@ flex-direction: column;
   
 
 }
+
